@@ -4,7 +4,6 @@ const {adminSignIn, adminSignUp, adminSignOut} = require("../controllers/admin.c
 
 router.post("/admin-signup", adminSignUp)
       .post("/admin-signin", adminSignIn)
-      .get("/admin-signout", adminSignOut)
 
 
 module.exports = router;

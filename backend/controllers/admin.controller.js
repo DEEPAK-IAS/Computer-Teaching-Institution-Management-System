@@ -59,19 +59,7 @@ async function adminSignIn(req, res, next) {
 
 
 
-
-async function adminSignOut(req, res, next) {
-  try {
-
-  } catch (err) {
-    next(err);
-  }
-}
-
-
-
 module.exports = {
   adminSignIn,
-  adminSignUp,
-  adminSignOut
+  adminSignUp
 };
