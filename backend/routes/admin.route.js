@@ -5,7 +5,7 @@ const verifyToken = require("../middlewares/authMiddleware");
 
 router.post("/admin-signup", adminSignUp)
       .post("/admin-signin", adminSignIn)
-      .patch("/admin-update/:id", updateAdminInfo);
+      .patch("/admin-update/:id", verifyToken, updateAdminInfo);
 
 
 module.exports = router;
