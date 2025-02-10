@@ -58,8 +58,45 @@ async function adminSignIn(req, res, next) {
 }
 
 
+async function updateAdminInfo(req, res, next) {
+  try {
+    // if(req.verifyId != req.param.id) next(errHandler(401, "Unauthorized"));
+    if(req.body.id || req.body._id) next(errHandler(400, "cannot update id"));
+    try {
+      console.log(req.params.id);
+      const adminToUpdate = await Admin.findOne({id: req.params.id});
+      if(!adminToUpdate) next(errHandler(404, "user not found"));
+      if (req.body.adminPassword) req.body.adminPassword = bcryptjs.hashSync(req.body.adminPassword, 10);
+      const updatedAdmin = await Admin.findByIdAndUpdate({id: req.params.id} , {
+        adminName: req.body.adminName,
+        adminMail : req.body.adminMain,
+        password: req.body.adminPassword,
+        phone: req.body.phone,
+        role: req.body.role
+      }, {new: true});
+
+      const {password:_, ...rest} = updateAdminInfo._doc;
+      res.status(200).json({
+        success: true,
+        data: {
+          admin: rest
+        }
+      })
+
+    } catch(err) {
+      next(err);
+    }
+
+  } catch(err) {
+    next(err);
+  }
+   
+}
+
+
 
 module.exports = {
   adminSignIn,
-  adminSignUp
+  adminSignUp,
+  updateAdminInfo
 };
