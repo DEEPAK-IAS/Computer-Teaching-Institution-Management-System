@@ -1,9 +1,10 @@
 const express = require("express");
 const dbConnect = require("./db/index");
+const adminRouter = require("./routes/admin.route");
 const app = express();
 
-
-
+app.use(express.json());
+app.use("/api/v1/admin", adminRouter);
 
 
 
