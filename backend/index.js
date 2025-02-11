@@ -1,12 +1,12 @@
 const express = require("express");
 const dbConnect = require("./db/index");
 const adminRouter = require("./routes/admin.route");
+const staffRouter = require("./routes/staff.route");
 const app = express();
 
 app.use(express.json());
 app.use("/api/v1/admin", adminRouter);
-
-
+app.use("/api/v1/staff", staffRouter);
 
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
@@ -17,7 +17,6 @@ app.use((err, req, res, next) => {
     message: message
   });
 });
-
 
 const PORT = process.env.PORT || 3000;
 dbConnect()

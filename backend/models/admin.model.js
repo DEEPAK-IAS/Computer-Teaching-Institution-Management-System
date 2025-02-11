@@ -1,7 +1,5 @@
 const mongoose = require("mongoose");
 
-
-
 const AdminSchema = new mongoose.Schema({
   adminName : {
     type: String,
@@ -32,7 +30,6 @@ const AdminSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
-
 
 const Admin = mongoose.model("Admin", AdminSchema);
 

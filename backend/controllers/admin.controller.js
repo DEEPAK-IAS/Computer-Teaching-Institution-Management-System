@@ -6,8 +6,15 @@ require("dotenv").config();
 
 async function adminSignUp(req, res, next) {
   try {
+    const existingAdmin = await Admin.findOne();
+    if (existingAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "Admin already exists. Only one admin is allowed.",
+      });
+    }
     const { adminName, adminMail, adminPassword, role, phone } = req.body;
-    const hashedPassword = bcryptjs.hashSync(adminPassword, 10);
+    const hashedPassword = await bcryptjs.hash(adminPassword, 10);
     const newAdmin = await new Admin({
       adminName: adminName,
       adminMail: adminMail,
@@ -15,7 +22,7 @@ async function adminSignUp(req, res, next) {
       role: role,
       phone: phone,
     }).save();
-
+    
     const { password: _, ...rest } = newAdmin._doc;
     res.status(201).json({
       success: true,
@@ -28,22 +35,22 @@ async function adminSignUp(req, res, next) {
 
 async function adminSignIn(req, res, next) {
   try {
-    const { adminEmail, adminPassword } = req.body;
-    const admin = await Admin.findOne({ adminEmail });
+    const { adminMail, adminPassword } = req.body;
+    console.log(adminMail)
+    const admin = await Admin.findOne({ adminMail: adminMail });
     if (!admin) next(errHandler(404, "Admin not Found"));
-    const isValidPassword = bcryptjs.compareSync(
+    const isValidPassword = await bcryptjs.compare(
       adminPassword,
       admin.adminPassword
     );
     if (!isValidPassword) next(errHandler(401, "unauthorized"));
     const admin_access_token = jwt.sign(
-      { id: admin._id, role: "admin" },
+      { id: admin._id, role: admin.role },
       process.env.JWT_SECRET_KEY
     );
     res.status(200).json({
       success: true,
       admin: {
-        id: admin._id,
         email: admin.adminMail,
       },
       token: admin_access_token,
@@ -53,17 +60,16 @@ async function adminSignIn(req, res, next) {
   }
 }
 
-async function updateAdminInfo(req, res, next) {
+
+
+async function updateAdminAccount(req, res, next) {
   try {
-    if (req.verifyId != req.params.id)
-      return next(errHandler(401, "Unauthorized"));
     if (req.body.id || req.body._id)
       return next(errHandler(400, "cannot update id"));
-
     const adminToUpdate = await Admin.findById(req.params.id);
-    if (!adminToUpdate) next(errHandler(404, "user not found"));
+    if (!adminToUpdate) next(errHandler(404, "Admin Npt Found"));
     if (req.body.adminPassword)
-      req.body.adminPassword = bcryptjs.hashSync(req.body.adminPassword, 10);
+      req.body.adminPassword = await bcryptjs.hash(req.body.adminPassword, 10);
     const updatedAdmin = await Admin.findByIdAndUpdate(
       req.params.id,
       {
@@ -89,12 +95,23 @@ async function updateAdminInfo(req, res, next) {
 }
 
 
+
 async function deleteAdminAccount(req, res, next) {
-  
+  try {
+    const adminToDelete = await Admin.findOne({_id: req.params.id});
+    if(!adminToDelete) return next(errHandler(404, "Admin Not Found"));
+    const deletedAdmin = await Admin.findByIdAndDelete({_id: req.params.id});
+    res.status(200).json({ message: `${deletedAdmin.adminName} account deleted successfully` });
+  } catch(err) {
+    next(err);
+  }
 }
+
+
 
 module.exports = {
   adminSignIn,
   adminSignUp,
-  updateAdminInfo,
+  updateAdminAccount,
+  deleteAdminAccount
 };
