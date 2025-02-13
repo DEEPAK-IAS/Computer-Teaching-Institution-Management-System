@@ -56,7 +56,7 @@ async function updateStaffAccount(req, res, next) {
   try {
     if (req.body.id || req.body._id)
       return next(errHandler(400, "cannot update id"));
-    const staffToUpdate = await Staff.findOne({_id: req.params.id});
+    const staffToUpdate = await Staff.findOne({ _id: req.params.id });
     if (!staffToUpdate) return next(errHandler(404, "Staff not found"));
     if (req.body.password)
       req.body.password = await bcryptjs.hash(password, 10);
@@ -93,7 +93,7 @@ async function deleteStaffAccount(req, res, next) {
     const deletedAdmin = await Staff.findByIdAndDelete({ _id: req.params.id });
     res
       .status(200)
-      .json({ message: `${deletedAdmin.name} was deleted successfully.` });
+      .json({ message: `${deletedAdmin.name} Account was deleted successfully.` });
   } catch (err) {
     next(err);
   }
@@ -101,7 +101,7 @@ async function deleteStaffAccount(req, res, next) {
 
 async function getSpecificStaff(req, res, next) {
   try {
-    const staff = await Staff.findOne(req.params.id);
+    const staff = await Staff.findOne({_id: req.params.id});
     if (!staff) return next(errHandler(404, "Staff not found"));
     res.status(200).json({
       success: true,

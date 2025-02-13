@@ -22,7 +22,7 @@ async function adminSignUp(req, res, next) {
       role: role,
       phone: phone,
     }).save();
-    
+
     const { password: _, ...rest } = newAdmin._doc;
     res.status(201).json({
       success: true,
@@ -36,7 +36,7 @@ async function adminSignUp(req, res, next) {
 async function adminSignIn(req, res, next) {
   try {
     const { adminMail, adminPassword } = req.body;
-    console.log(adminMail)
+    console.log(adminMail);
     const admin = await Admin.findOne({ adminMail: adminMail });
     if (!admin) next(errHandler(404, "Admin not Found"));
     const isValidPassword = await bcryptjs.compare(
@@ -60,14 +60,12 @@ async function adminSignIn(req, res, next) {
   }
 }
 
-
-
 async function updateAdminAccount(req, res, next) {
   try {
     if (req.body.id || req.body._id)
       return next(errHandler(400, "cannot update id"));
     const adminToUpdate = await Admin.findById(req.params.id);
-    if (!adminToUpdate) next(errHandler(404, "Admin Npt Found"));
+    if (!adminToUpdate) next(errHandler(404, "Admin Not Found"));
     if (req.body.adminPassword)
       req.body.adminPassword = await bcryptjs.hash(req.body.adminPassword, 10);
     const updatedAdmin = await Admin.findByIdAndUpdate(
@@ -94,24 +92,24 @@ async function updateAdminAccount(req, res, next) {
   }
 }
 
-
-
 async function deleteAdminAccount(req, res, next) {
   try {
-    const adminToDelete = await Admin.findOne({_id: req.params.id});
-    if(!adminToDelete) return next(errHandler(404, "Admin Not Found"));
-    const deletedAdmin = await Admin.findByIdAndDelete({_id: req.params.id});
-    res.status(200).json({ message: `${deletedAdmin.adminName} account deleted successfully` });
-  } catch(err) {
+    const adminToDelete = await Admin.findOne({ _id: req.params.id });
+    if (!adminToDelete) return next(errHandler(404, "Admin Not Found"));
+    const deletedAdmin = await Admin.findByIdAndDelete({ _id: req.params.id });
+    res
+      .status(200)
+      .json({
+        message: `${deletedAdmin.adminName} account deleted successfully`,
+      });
+  } catch (err) {
     next(err);
   }
 }
-
-
 
 module.exports = {
   adminSignIn,
   adminSignUp,
   updateAdminAccount,
-  deleteAdminAccount
+  deleteAdminAccount,
 };
