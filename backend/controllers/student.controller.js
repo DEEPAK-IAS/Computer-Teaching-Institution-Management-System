@@ -12,7 +12,7 @@ async function createStudent(req, res, next) {
       address,applyingFor, applyingDate, 
       courseName, duration, startingDate, 
       batchTime, totalAmount, installments, 
-      installmentAmounts
+      installmentAmounts, staff, courseStatus
     } = req.body;
 
     
@@ -25,7 +25,7 @@ async function createStudent(req, res, next) {
       address,applyingFor, applyingDate, 
       courseName, duration, startingDate, 
       batchTime, totalAmount, installments, 
-      installmentAmounts
+      installmentAmounts, staff, courseStatus
     }).save();
 
     res.status(201).json({
@@ -61,7 +61,9 @@ async function updateStudentDetails(req, res, next) {
         batchTime: req.body.batchTime,
         totalAmount: req.body.totalAmount,
         installments: req.body.installments,
-        installmentAmounts: req.body.installmentAmounts
+        installmentAmounts: req.body.installmentAmounts,
+        staff: req.body.staff,
+        courseStatus: req.body.courseStatus
       }, 
       {new: true}
     );

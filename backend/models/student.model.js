@@ -14,11 +14,13 @@ const studentSchema = new mongoose.Schema(
     applyingDate: { type: Date, default: Date.now },
     courseName: { type: String, required: true },
     duration: { type: String, required: true },
-    startingDate: { type: Date, required: true },
-    batchTime: { type: String, required: true },
     totalAmount: { type: Number, required: true },
     installments: { type: Number, required: true },
-    installmentAmounts: [{ type: Number }]
+    installmentAmounts: [{ type: Number }],
+    startingDate: { type: Date, required: true },
+    batchTime: { type: String, required: true },
+    staff: { type: String, required: true },
+    courseStatus: { type: String, enum: ["Waiting", "Ongoing", "Completed", "AddExistingBatch"], default: "Waiting" },
   },
   { timestamps: true }
 );
