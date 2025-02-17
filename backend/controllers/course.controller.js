@@ -4,10 +4,11 @@ const errHandler = require("../utils/errHandler");
 
 async function createCourse(req, res, next) {
   try {
-    const { courseId, courseName, courseIncludes } = req.body;
+    const { courseId, courseName, courseIncludes, currentCourse } = req.body;
     const newCourse = await new Course({
       courseId: courseId,
       courseName : courseName,
+      currentCourse: currentCourse,
       courseIncludes: courseIncludes
     }).save();
     res.status(200).json({
@@ -27,6 +28,7 @@ async function updateCourse(req, res, next) {
     await Course.findByIdAndUpdate({_id: req.params.id}, {
       courseId: req.body.courseId,
       name: req.body.name,
+      currentCourse: req.body.currentCourse,
       courseIncludes: req.body.courseIncludes
     });
     res.status(200).json({

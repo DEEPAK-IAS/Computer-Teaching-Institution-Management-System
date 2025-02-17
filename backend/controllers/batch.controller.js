@@ -33,7 +33,7 @@ async function createBatch(req, res, next) {
 
     await Student.updateMany(
       { studentId: { $in: formattedStudents } },
-      { $set: { courseStatus: "Ongoing" } }
+      { $set: { courseStatus: "Ongoing", batchId: batchId } }
     );
 
     res.status(201).json({
@@ -104,10 +104,9 @@ async function deleteStudentsFromBatch(req, res, next) {
     const existsBatch = await Batch.findOne({ batchId }); 
     if (!existsBatch) return next(errHandler(404, "Batch not found"));
     const deletedStudent  = await Batch.findOneAndUpdate({batchId},
-      { $unset : { students: Batch.students[req.body.studentId] } },
+      { $pull : { students: req.body.studentId } },
       {new: true}
     );
-
     res.status(200).json({
       success: true,
       message: `Student ${req.body.studentId} deleted from ${batchId} successfully`,
@@ -117,8 +116,58 @@ async function deleteStudentsFromBatch(req, res, next) {
   }
 }
 
+
+
+async function deleteBatch(req, res, next) {
+  try {
+
+    const {batchId} = req.params;
+    const existingBatch = await Batch.findOne({batchId});
+    if(!existingBatch) return next(errHandler(404, "batch not found"));
+    const deletedBatch = await Batch.findOneAndDelete({batchId});
+    res.status(200).json({
+      success: true,
+      message: `${deleteBatch.courseName} was deleted successfully..`
+    })
+  } catch(err) {
+    next(err);
+  }
+}
+
+
+
+async function getAllBatches(req, res, next) {
+  try {
+    const batches = await Batch.find();
+    res.status(200).json({
+      success: true,
+      data: batches,
+    });
+  } catch(err) {
+    next(err);
+  }
+}
+
+
+async function getSpecificBatch(req, res, next) {
+  try {
+    const batch = await Batch.findOne({batchId: req.params.batchId});
+    if(!batch) return next(errHandler(404, "batch not found"));
+    res.status(200).json({
+      success: true,
+      data: batch,
+    });
+  } catch(err) {
+    next(err);
+  }
+}
+
+
 module.exports = {
   createBatch,
   updateBatch,
-  deleteStudentsFromBatch
+  deleteStudentsFromBatch,
+  deleteBatch,
+  getAllBatches,
+  getSpecificBatch
 };

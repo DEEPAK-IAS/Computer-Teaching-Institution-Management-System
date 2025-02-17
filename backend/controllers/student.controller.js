@@ -3,6 +3,8 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const Student = require("../models/student.model");
 const errHandler = require("../utils/errHandler");
+const {generateOTP} = require("../utils/generateOTP");
+const sendOTPEmail = require("../config/nodemailer.config");
 
 async function createStudent(req, res, next) {
   try {
@@ -32,6 +34,62 @@ async function createStudent(req, res, next) {
       success: true,
       message: `${newStudent.name} created successfully`,
     });
+  } catch(err) {
+    next(err);
+  }
+}
+
+
+
+async function studentSignIn(req, res, next) {
+  try {
+    const { email } = req.body;
+    const existsStudent = await Student.findOne({ 
+      email: email
+    });
+    if(!existsStudent) return next(errHandler(401, "Student not found"));
+
+    const OTP = generateOTP();
+
+    sendOTPEmail(email, OTP);
+    existsStudent.otp = OTP;
+    existsStudent.otpExpire = Date.now() + 5 * 60 * 1000;
+    await existsStudent.save();
+
+
+    res.status(200).json({
+      success: true,
+      message: "OTP has been sent successfully to email"
+    })
+    
+  } catch(err) {
+    next(err);
+  }
+}
+
+
+async function verifyOTP(req, res, next) {
+  try {
+    const {email, otp} = req.body;
+    if (!email || !otp ) return next(errorHandler(400, "All fields are required"));
+    const student = await Student.findOne({email});
+    if(!student) return next(errHandler(404, "student not found"));
+    if (Date.now() > student.otpExpire) return next(errHandler(400, "OTP expired"));
+    if(otp != student.otp) return next(errHandler(401, "Unauthorized"));
+
+    const token = jwt.sign({id : student.studentId, role: "student"}, process.env.JWT_SECRET_KEY);
+
+    student.otp = undefined;
+    student.otpExpire = undefined;
+    
+    await student.save();
+
+    res.status(200).json({
+      message: "SignIn successfully.",
+      token: token
+    })
+
+
   } catch(err) {
     next(err);
   }
@@ -128,4 +186,6 @@ module.exports = {
   deleteStudentDetails,
   getAllStudents,
   getSpecificStudent,
+  studentSignIn,
+  verifyOTP
 }

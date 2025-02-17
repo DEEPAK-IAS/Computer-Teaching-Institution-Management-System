@@ -11,6 +11,7 @@ const courseSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  currentCourse: {type: String},
   courseIncludes : {
     type: [String],
     required: true,
