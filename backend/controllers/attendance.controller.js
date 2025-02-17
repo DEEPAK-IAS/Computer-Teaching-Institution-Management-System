@@ -4,11 +4,13 @@ const errHandler = require("../utils/errHandler");
 
 async function createAttendance(req, res, next) {
   try {
-    const { batchId, year, month } = req.body;
+    const { batchId, year, month, time, staff } = req.body;
     const existingAttendance = await Attendance.findOne({
       batchId,
       year,
       month,
+      time,
+      staff,
     });
     if (existingAttendance)
       return next(errHandler(403, "Attendance already exists"));
@@ -22,12 +24,14 @@ async function createAttendance(req, res, next) {
       batchId: batchId,
       month: month,
       year: year,
+      time: time,
+      staff: staff,
       students: formattedStudents,
     }).save();
 
     res.status(200).json({
       success: true,
-      message: `${batchId}, ${month}, ${year} attendance  was created successfully.`,
+      message: `${batchId}, ${month}, ${year} ${staff} attendance  was created successfully.`,
     });
   } catch (err) {
     next(err);
@@ -37,10 +41,10 @@ async function createAttendance(req, res, next) {
 async function updateStudentAttendance(req, res, next) {
   try {
     const batchId = req.params.batchId;
-    const { year, month, students } = req.body;
+    const { year, month, time, students } = req.body;
     const existingAttendance = await Attendance.findOne({ batchId: batchId });
-    if (!existingAttendance)  return next(errHandler(404, "Attendance not found"));
-    let updatedCount = 0;
+    if (!existingAttendance)
+      return next(errHandler(404, "Attendance not found"));
     for (const student of students) {
       const { studentId, dailyAttendance } = student;
       const { date, status } = dailyAttendance;
@@ -51,7 +55,10 @@ async function updateStudentAttendance(req, res, next) {
           batchId,
           year,
           month,
+          time,
+          staff,
           "students.studentId": studentId,
+          "students.dailyAttendance.date": { $ne: attendanceDate },
         },
         {
           $push: {
@@ -60,13 +67,32 @@ async function updateStudentAttendance(req, res, next) {
         },
         { new: true }
       );
-      if (result.isModified > 0) {
-        updatedCount++;
+      if (!result) {
+        await Attendance.updateOne(
+          {
+            batchId,
+            year,
+            month,
+            time,
+            staff,
+            "students.studentId": studentId,
+            "students.dailyAttendance.date": attendanceDate,
+          },
+          {
+            $set: {
+              "students.$.dailyAttendance.$[attendance].status": status,
+            },
+          },
+          {
+            arrayFilters: [{ "attendance.date": attendanceDate }],
+          }
+        );
+      } else {
       }
     }
     res.status(200).json({
       success: true,
-      message: `${updatedCount} students will be attendance updated successfully..`,
+      message: `students will be attendance updated successfully..`,
     });
   } catch (err) {
     next(err);
@@ -75,6 +101,33 @@ async function updateStudentAttendance(req, res, next) {
 
 async function updateAttendance(req, res, next) {
   try {
+    const { batchId, year, month, time, staff } = req.body;
+    const existingAttendance = await Attendance.findOne({
+      batchId: batchId,
+      year: year,
+      month: month,
+      time: time,
+      staff: staff,
+    });
+    if (!existingAttendance)
+      return next(errHandler(404, "attendance not found"));
+
+    const updatedAttendance = await Attendance.findOneAndUpdate(
+      {
+        batchId: batchId,
+        year: year,
+        month: month,
+        time: time,
+        staff: staff,
+      },
+      {
+        year: year,
+        month: month,
+        time: time,
+        staff: staff
+      },
+      { new: true }
+    );
   } catch (err) {
     next(err);
   }

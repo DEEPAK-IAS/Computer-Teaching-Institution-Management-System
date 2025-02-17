@@ -4,6 +4,7 @@ const attendanceSchema = new mongoose.Schema({
   batchId: { type: String, required: true },
   year: { type: Number, required: true },
   month: { type: Number, required: true },
+  time: {type: String, required: true},
   students: [
     {
       studentId: { type: String, required: true },

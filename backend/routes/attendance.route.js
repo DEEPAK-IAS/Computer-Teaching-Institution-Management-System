@@ -10,7 +10,7 @@ const {
 
 
 router.post("/create", createAttendance)
-      .patch("/update-student-attendance/:batchId", updateStudentAttendance)
+      .patch("/update/:batchId", updateStudentAttendance)
 
 
 
