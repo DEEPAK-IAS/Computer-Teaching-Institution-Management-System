@@ -11,20 +11,38 @@ const studentSchema = new mongoose.Schema(
     fname: { type: String, required: true },
     fatherPhone: { type: String, required: true },
     address: { type: String, required: true },
-    applyingFor: { type: String, required: true },
-    applyingDate: { type: Date, default: Date.now },
-    courseName: { type: String, required: true },
-    duration: { type: String, required: true },
-    batchTime: { type: String, required: true },
-    staff: { type: String, required: true },
-    courseStatus: { type: String, enum: ["Waiting", "Ongoing", "Completed", "AddExistingBatch"], default: "Waiting" },
+    courses: [
+      {
+        applyingFor: { type: String },
+        applyingDate: { type: Date },
+        duration: { type: String },
+        startingDate: { type: Date },
+        courseStatus: {type: String, enum: ["waiting", "break", "ongoing", "completed"], default: "waiting"},
+        modulesInclude: [
+          {
+            moduleName: { type: String },
+            moduleStatus: { type: String },
+            moduleTime: {type: String},
+          },
+        ],
+        currentModule: {
+          moduleName: { type: String },
+          moduleStatus: {
+            type: String,
+            enum: ["Waiting", "Ongoing", "Completed", "AddExistingBatch"],
+            default: "Waiting",
+          },
+          batchTime: { type: String },
+          staff: { type: String },
+        },
+      },
+    ],
     totalAmount: { type: Number, required: true },
     installments: { type: Number, required: true },
     installmentAmounts: [{ type: Number }],
-    startingDate: { type: Date, required: true },
-    batchId : {type: String , default: ""},
-    otp: {type: String},
-    otpExpire: {type: Number}
+    batchId: { type: String, default: "" },
+    otp: { type: String },
+    otpExpire: { type: Number },
   },
   { timestamps: true }
 );

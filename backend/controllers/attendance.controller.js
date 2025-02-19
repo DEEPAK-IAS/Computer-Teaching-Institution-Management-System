@@ -4,13 +4,11 @@ const errHandler = require("../utils/errHandler");
 
 async function createAttendance(req, res, next) {
   try {
-    const { batchId, year, month, time, staff } = req.body;
+    const { batchId, year, month } = req.body;
     const existingAttendance = await Attendance.findOne({
       batchId,
       year,
-      month,
-      time,
-      staff,
+      month
     });
     if (existingAttendance)
       return next(errHandler(403, "Attendance already exists"));
@@ -24,8 +22,8 @@ async function createAttendance(req, res, next) {
       batchId: batchId,
       month: month,
       year: year,
-      time: time,
-      staff: staff,
+      time: batch.batchTime,
+      staff: batch.staff,
       students: formattedStudents,
     }).save();
 
@@ -41,7 +39,7 @@ async function createAttendance(req, res, next) {
 async function updateStudentAttendance(req, res, next) {
   try {
     const batchId = req.params.batchId;
-    const { year, month, time, students } = req.body;
+    const { year, month, time, students, staff } = req.body;
     const existingAttendance = await Attendance.findOne({ batchId: batchId });
     if (!existingAttendance)
       return next(errHandler(404, "Attendance not found"));

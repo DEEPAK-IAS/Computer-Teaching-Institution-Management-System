@@ -11,7 +11,10 @@ const courseSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  currentCourse: {type: String},
+  duration: {
+    type: String,
+    required: true
+  },
   courseIncludes : {
     type: [String],
     required: true,
