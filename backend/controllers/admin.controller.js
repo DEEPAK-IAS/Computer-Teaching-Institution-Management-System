@@ -62,17 +62,20 @@ async function adminSignIn(req, res, next) {
 
 async function updateAdminAccount(req, res, next) {
   try {
-    const {adminMail} = req.body;
+    const {adminMail, adminPassword} = req.body;
     const adminToUpdate = await Admin.findOne({adminMail});
-    if (!adminToUpdate) next(errHandler(404, "Admin Not Found"));
-    if (req.body.adminPassword)
-      req.body.adminPassword = await bcryptjs.hash(req.body.adminPassword, 10);
-    const updatedAdmin = await Admin.findByIdAndUpdate(
-      req.params.id,
+    if (!adminToUpdate) return next(errHandler(404, "Admin Not Found"));
+    const isValidPassword = await bcryptjs.compare(adminPassword, adminToUpdate.adminPassword);
+    if(!isValidPassword) return next(errHandler(401, "password incorrect"));
+    if (req.body.newAdminPassword){
+      console.log(req.body.newAdminPassword);
+      req.body.newAdminPassword = await bcryptjs.hash(req.body.newAdminPassword, 10);
+    }
+    const updatedAdmin = await Admin.findOneAndUpdate(
+      {adminMail: adminMail},
       {
         adminName: req.body.adminName,
-        adminMail: req.body.adminMail,
-        password: req.body.adminPassword,
+        adminPassword: req.body.newAdminPassword,
         phone: req.body.phone,
         role: req.body.role,
       },
@@ -82,9 +85,10 @@ async function updateAdminAccount(req, res, next) {
     const { password: _, ...rest } = updatedAdmin._doc;
     res.status(200).json({
       success: true,
-      data: {
-        admin: rest,
-      },
+      message: "Admin Account has been updated successfully.",
+      admin: {
+        email: rest.adminMail
+      }
     });
   } catch (err) {
     next(err);
@@ -93,9 +97,12 @@ async function updateAdminAccount(req, res, next) {
 
 async function deleteAdminAccount(req, res, next) {
   try {
-    const adminToDelete = await Admin.findOne({ _id: req.params.id });
+    const {adminMail, adminPassword} = req.body;
+    const adminToDelete = await Admin.findOne({ adminMail: adminMail });
     if (!adminToDelete) return next(errHandler(404, "Admin Not Found"));
-    const deletedAdmin = await Admin.findByIdAndDelete({ _id: req.params.id });
+    const isValidPassword = await bcryptjs.compare(adminPassword, adminToDelete.adminPassword);
+    if(!isValidPassword) return next(errHandler(401, "password incorrect"));
+    const deletedAdmin = await Admin.findOneAndDelete({adminMail: adminMail });
     res
       .status(200)
       .json({

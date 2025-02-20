@@ -11,7 +11,7 @@ const verifyToken = require("../middlewares/authMiddleware");
 
 router
   .post(
-    "/signup",
+    "/create",
     adminSignUp
   )
   .post("/signin", adminSignIn)
@@ -22,7 +22,7 @@ router
     updateAdminAccount
   )
   .delete(
-    "/delete/:id",
+    "/delete",
     verifyToken,
     authorizeRoles("admin"),
     deleteAdminAccount
