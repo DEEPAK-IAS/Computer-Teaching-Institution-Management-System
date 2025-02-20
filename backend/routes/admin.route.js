@@ -16,7 +16,7 @@ router
   )
   .post("/signin", adminSignIn)
   .patch(
-    "/update/:id",
+    "/update",
     verifyToken,
     authorizeRoles("admin"),
     updateAdminAccount

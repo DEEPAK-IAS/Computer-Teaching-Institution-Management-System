@@ -62,9 +62,8 @@ async function adminSignIn(req, res, next) {
 
 async function updateAdminAccount(req, res, next) {
   try {
-    if (req.body.id || req.body._id)
-      return next(errHandler(400, "cannot update id"));
-    const adminToUpdate = await Admin.findById(req.params.id);
+    const {adminMail} = req.body;
+    const adminToUpdate = await Admin.findOne({adminMail});
     if (!adminToUpdate) next(errHandler(404, "Admin Not Found"));
     if (req.body.adminPassword)
       req.body.adminPassword = await bcryptjs.hash(req.body.adminPassword, 10);
