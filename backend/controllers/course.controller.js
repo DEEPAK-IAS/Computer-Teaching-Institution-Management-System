@@ -21,12 +21,13 @@ async function createCourse(req, res, next) {
 
 async function updateCourse(req, res, next) {
   try {
-    const courseToUpdate = await Course.findOne({ _id: req.params.id });
+    const {courseId} = req.body;
+    const courseToUpdate = await Course.findOne({courseId: courseId});
     if (!courseToUpdate) return next(errHandler("404", "Course not found"));
     await Course.findByIdAndUpdate(
-      { _id: req.params.id },
+      { courseId: courseId },
       {
-        courseId: req.body.courseId,
+        courseId: req.body.newCourseId,
         name: req.body.name,
         currentCourse: req.body.currentCourse,
         courseIncludes: req.body.courseIncludes,
@@ -43,7 +44,8 @@ async function updateCourse(req, res, next) {
 
 async function deleteCourse(req, res, next) {
   try {
-    const courseToDelete = await Course.findOne({ _id: req.params.id });
+    const {courseId} = req.body;
+    const courseToDelete = await Course.findOne({ courseId: courseId });
     if (!courseToDelete) return next(errHandler("404", "Course not found"));
     await Course.findByIdAndDelete({ _id: req.params.id });
     res.status(200).json({
@@ -60,7 +62,7 @@ async function getAllCourses(req, res, next) {
     const courses = await Course.find({});
     res.status(200).json({
       success: true,
-      data: courses,
+      courses: courses,
     });
   } catch (err) {
     next(err);
@@ -69,11 +71,12 @@ async function getAllCourses(req, res, next) {
 
 async function getSpecificCourse(req, res, next) {
   try {
-    const course = await Course.findOne({ courseId: req.params.id });
+    const {courseId} = req.body;
+    const course = await Course.findOne({ courseId: courseId});
     if (!course) return next(errHandler("404", "Course not found"));
     res.status(200).json({
       success: true,
-      data: course,
+      course: course,
     });
   } catch (err) {
     next(err);
