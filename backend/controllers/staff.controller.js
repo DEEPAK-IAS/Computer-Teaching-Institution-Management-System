@@ -5,8 +5,7 @@ const errHandler = require("../utils/errHandler");
 
 async function staffSignUp(req, res, next) {
   try {
-    const { name, email, password, phone, role, courses, availableTime } =
-      req.body;
+    const { name, email, password, phone, role, courses, availableTime } = req.body;
     const isStaffExists = await Staff.findOne({ email });
     if (isStaffExists) return next(errHandler(403, "staff already exists"));
     const hashedPassword = await bcryptjs.hash(password, 10);
@@ -22,7 +21,7 @@ async function staffSignUp(req, res, next) {
 
     res.status(200).json({
       success: true,
-      message: "Staff signedUp successfully.",
+      message: `${newStaff.name }Staff signedUp successfully.`,
     });
   } catch (err) {
     next(err);
@@ -54,17 +53,15 @@ async function staffSignIn(req, res, next) {
 
 async function updateStaffAccount(req, res, next) {
   try {
-    if (req.body.id || req.body._id)
-      return next(errHandler(400, "cannot update id"));
-    const staffToUpdate = await Staff.findOne({ _id: req.params.id });
+    const { email } = req.body;
+    const staffToUpdate = await Staff.findOne({email : email });
     if (!staffToUpdate) return next(errHandler(404, "Staff not found"));
-    if (req.body.password)
-      req.body.password = await bcryptjs.hash(password, 10);
-    const updatedStaff = await Staff.findByIdAndUpdate(
-      req.params.id,
+    if (req.body.password) req.body.password = await bcryptjs.hash(req.body.password, 10);
+    const updatedStaff = await Staff.findOneAndUpdate(
+      {email : email},
       {
         name: req.body.name,
-        email: req.body.email,
+        email: req.body.newEmail,
         password: req.body.password,
         phone: req.body.phone,
         role: req.body.role,
@@ -88,9 +85,10 @@ async function updateStaffAccount(req, res, next) {
 
 async function deleteStaffAccount(req, res, next) {
   try {
-    const staffToDelete = await Staff.findOne({ _id: req.params.id });
+    const { email }= req.body;
+    const staffToDelete = await Staff.findOne({email : email });
     if (!staffToDelete) return next(errHandler(404, "staff not found."));
-    const deletedAdmin = await Staff.findByIdAndDelete({ _id: req.params.id });
+    const deletedAdmin = await Staff.findOneAndDelete({ email: email});
     res
       .status(200)
       .json({ message: `${deletedAdmin.name} Account was deleted successfully.` });
@@ -101,7 +99,8 @@ async function deleteStaffAccount(req, res, next) {
 
 async function getSpecificStaff(req, res, next) {
   try {
-    const staff = await Staff.findOne({_id: req.params.id});
+    const email = req.params.email;
+    const staff = await Staff.findOne({email: email});
     if (!staff) return next(errHandler(404, "Staff not found"));
     res.status(200).json({
       success: true,

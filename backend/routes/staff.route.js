@@ -5,11 +5,11 @@ const authorizeRole = require("../middlewares/authorizeRoles");
 const {staffSignUp, staffSignIn, updateStaffAccount, deleteStaffAccount, getAllStaffs, getSpecificStaff} = require("../controllers/staff.controller")
 require("dotenv").config();
 
-router.post("/signup", staffSignUp)
+router.post("/create",verifyToken, authorizeRole("admin"), staffSignUp)
       .post("/signin", staffSignIn)
-      .patch("/update/:id",verifyToken, authorizeRole("admin"), updateStaffAccount)
-      .delete("/delete/:id",verifyToken, authorizeRole("admin"), deleteStaffAccount)
-      .get("/all", getAllStaffs)
-      .get("/:id", getSpecificStaff);
+      .patch("/update",verifyToken, authorizeRole("admin"), updateStaffAccount)
+      .delete("/delete",verifyToken, authorizeRole("admin"), deleteStaffAccount)
+      .get("/all",verifyToken, authorizeRole("admin"), getAllStaffs)
+      .get("/:email", getSpecificStaff);
 
 module.exports = router;
