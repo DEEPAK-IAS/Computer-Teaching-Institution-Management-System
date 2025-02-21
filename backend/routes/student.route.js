@@ -24,6 +24,6 @@ router.post("/create", verifyToken, authorizeRole("admin"), createStudent)
       .delete("/delete/:id", verifyToken, authorizeRole("admin"), deleteStudentDetails)
       .delete("/delete-course", verifyToken, authorizeRole("admin"), deleteCourse)
       .get("/all", verifyToken, authorizeRole("admin"), getAllStudents)
-      .get("/:id", verifyToken, authorizeRole("admin", "staff", "student"), getSpecificStudent);
+      .get("/studentId", verifyToken, authorizeRole("admin", "staff", "student"), getSpecificStudent);
 
 module.exports = router;

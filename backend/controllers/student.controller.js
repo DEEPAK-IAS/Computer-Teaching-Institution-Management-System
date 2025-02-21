@@ -216,8 +216,8 @@ async function updateCourse(req, res, next) {
         .status(200)
         .json({ success: true, message: "Course updated", updatedStudent });
     }
-    if (req.body.courseFinished) {
-      const { moduleName, moduleStatus } = req.body;
+    if (req.body.moduleUpdate) {
+      const { moduleName, moduleStatus } = req.body.moduleUpdate;
 
       const updatedStudent = await Student.findOneAndUpdate(
         {
@@ -241,7 +241,7 @@ async function updateCourse(req, res, next) {
         .status(200)
         .json({ success: true, message: "Module updated", updatedStudent });
     }
-    if (req.body.time) {
+    if (req.body.moduleTime) {
       const {newTime} = req.body;
       const updatedStudent = await Student.findOneAndUpdate(
         {
@@ -270,6 +270,10 @@ async function updateCourse(req, res, next) {
 
       if (!updatedStudent)
         return next(errHandler(404, "Student or course not found"));
+
+      res
+        .status(200)
+        .json({ success: true, message: "Module updated", updatedStudent });
     }
   } catch (err) {
     next(err);
@@ -303,7 +307,7 @@ async function getAllStudents(req, res, next) {
     const students = await Student.find();
     res.status(200).json({
       success: true,
-      data: students,
+      students: students,
     });
   } catch (err) {
     next(err);
@@ -312,11 +316,11 @@ async function getAllStudents(req, res, next) {
 
 async function getSpecificStudent(req, res, next) {
   try {
-    const student = await Student.findOne({ studentId: req.params.id });
+    const student = await Student.findOne({ studentId: req.params.studentId });
     if (!student) return next(errHandler(404, "student not found"));
     res.status(200).json({
       success: true,
-      data: student,
+      student: student,
     });
   } catch (err) {
     next(err);
