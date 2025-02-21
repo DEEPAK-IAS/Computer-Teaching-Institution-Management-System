@@ -325,12 +325,13 @@ async function getSpecificStudent(req, res, next) {
 
 module.exports = {
   createStudent,
+  studentSignIn,
+  verifyOTP,
   updateStudentDetails,
   deleteStudentDetails,
   addCourse,
   deleteCourse,
+  updateCourse,
   getAllStudents,
-  getSpecificStudent,
-  studentSignIn,
-  verifyOTP,
+  getSpecificStudent
 };
