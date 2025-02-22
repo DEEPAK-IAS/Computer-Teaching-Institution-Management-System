@@ -129,6 +129,9 @@ async function updateStudentDetails(req, res, next) {
         dob: req.body.dob,
         fatherPhone: req.body.fatherPhone,
         address: req.body.address,
+        totalAmount: req.body.totalAmount,
+        installments: req.body.installments,
+        installmentAmounts: req.body.installmentAmounts
       },
       { new: true }
     );
