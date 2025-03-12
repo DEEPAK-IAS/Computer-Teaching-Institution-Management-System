@@ -23,7 +23,7 @@ router.post("/create", verifyToken, authorizeRole("admin"), createStudent)
       .patch("/update/:id", verifyToken, authorizeRole("admin"), updateStudentDetails)
       .delete("/delete/:id", verifyToken, authorizeRole("admin"), deleteStudentDetails)
       .delete("/delete-course", verifyToken, authorizeRole("admin"), deleteCourse)
-      .get("/all", verifyToken, authorizeRole("admin"), getAllStudents)
+      .get("/all", getAllStudents)
       .get("/studentId", verifyToken, authorizeRole("admin", "staff", "student"), getSpecificStudent);
 
 module.exports = router;

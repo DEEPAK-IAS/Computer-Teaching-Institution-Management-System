@@ -2,6 +2,8 @@ const Staff = require("../models/staff.model");
 const jwt = require("jsonwebtoken");
 const bcryptjs = require("bcryptjs");
 const errHandler = require("../utils/errHandler");
+const {generateOTP} = require("../utils/generateOTP");
+const sendOTPEmail = require("../config/nodemailer.config");
 
 async function staffSignUp(req, res, next) {
   try {
@@ -28,44 +30,74 @@ async function staffSignUp(req, res, next) {
   }
 }
 
+
+
 async function staffSignIn(req, res, next) {
   try {
-    const { email, password } = req.body;
-    const staff = await Staff.findOne({ email });
-    if (!staff) return next(errHandler(404, "Staff not found"));
-    const isValidPassword = await bcryptjs.compare(password, staff.password);
-    if (!isValidPassword) return next(errHandler(401, "Unauthorized"));
-    const staff_access_token = jwt.sign(
-      { id: staff._id, role: staff.role },
-      process.env.JWT_SECRET_KEY
-    );
+    const { email } = req.body;
+    const existStaff = await Staff.findOne({
+      email: email,
+    });
+    if (!existStaff) return next(errHandler(401, "Staff not found.."));
+    const OTP = generateOTP();
+    sendOTPEmail(email, OTP);
+    existStaff.otp = OTP;
+    existStaff.otpExpire = Date.now() + 5 * 60 * 1000;
+    await existStaff.save();
     res.status(200).json({
       success: true,
-      staff: {
-        email: staff.email,
-      },
-      token: staff_access_token,
+      message: "OTP has been sent successfully to email",
     });
   } catch (err) {
     next(err);
   }
 }
 
+
+async function verifyOTP(req, res, next) {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp)
+      return next(errHandler(400, "All fields are required"));
+    const staff = await Staff.findOne({ email });
+    if (!staff) return next(errHandler(404, "Staff not found"));
+    if (Date.now() > staff.otpExpire)
+      return next(errHandler(400, "OTP expired"));
+    if (otp != staff.otp) return next(errHandler(401, "Unauthorized"));
+
+    const token = jwt.sign(
+      { id: staff.StaffId, role: "Staff" },
+      process.env.JWT_SECRET_KEY
+    );
+
+    staff.otp = undefined;
+    staff.otpExpire = undefined;
+
+    await staff.save();
+
+    res.status(200).json({
+      message: "Staff SignIn successfully.",
+      token: token,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+
 async function updateStaffAccount(req, res, next) {
   try {
     const { email } = req.body;
     const staffToUpdate = await Staff.findOne({email : email });
     if (!staffToUpdate) return next(errHandler(404, "Staff not found"));
-    if (req.body.password) req.body.password = await bcryptjs.hash(req.body.password, 10);
     const updatedStaff = await Staff.findOneAndUpdate(
       {email : email},
       {
         name: req.body.name,
         email: req.body.newEmail,
-        password: req.body.password,
         phone: req.body.phone,
         role: req.body.role,
-        courses: req.body.role,
+        courses: req.body.courses,
         availableTime: req.body.availableTime,
       },
       { new: true }
@@ -134,4 +166,5 @@ module.exports = {
   deleteStaffAccount,
   getAllStaffs,
   getSpecificStaff,
+  verifyOTP
 };

@@ -7,8 +7,11 @@ const studentRouter = require("./routes/student.route");
 const batchRouter = require("./routes/batch.route");
 const attendanceRouter = require("./routes/attendance.route");
 const app = express();
+const cors = require("cors")
 
 app.use(express.json());
+app.use(cors({ origin: "http://localhost:3000" }));
+
 app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/staff", staffRouter);
 app.use("/api/v1/course", courseRouter);

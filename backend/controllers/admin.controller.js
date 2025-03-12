@@ -2,6 +2,8 @@ const jwt = require("jsonwebtoken");
 const bcryptjs = require("bcryptjs");
 const errHandler = require("../utils/errHandler");
 const Admin = require("../models/admin.model");
+const {generateOTP} = require("../utils/generateOTP");
+const sendOTPEmail = require("../config/nodemailer.config");
 require("dotenv").config();
 
 async function adminSignUp(req, res, next) {
@@ -13,12 +15,12 @@ async function adminSignUp(req, res, next) {
         message: "Admin already exists. Only one admin is allowed.",
       });
     }
-    const { adminName, adminMail, adminPassword, role, phone } = req.body;
-    const hashedPassword = await bcryptjs.hash(adminPassword, 10);
+    const { name, email, password, role, phone } = req.body;
+    const hashedPassword = await bcryptjs.hash(password, 10);
     const newAdmin = await new Admin({
-      adminName: adminName,
-      adminMail: adminMail,
-      adminPassword: hashedPassword,
+      name: name,
+      email: email,
+      password: hashedPassword,
       role: role,
       phone: phone,
     }).save();
@@ -33,26 +35,61 @@ async function adminSignUp(req, res, next) {
   }
 }
 
+
 async function adminSignIn(req, res, next) {
   try {
-    const { adminMail, adminPassword } = req.body;
-    console.log(adminMail);
-    const admin = await Admin.findOne({ adminMail: adminMail });
-    if (!admin) next(errHandler(404, "Admin not Found"));
+    const { email } = req.body;
+    console.log(email);
+    const existsAdmin = await Admin.findOne({
+      email: email,
+    });
+    if (!existsAdmin) return next(errHandler(401, "Admin not found.."));
+    const OTP = generateOTP();
+
+    sendOTPEmail(email, OTP);
+    existsAdmin.otp = OTP;
+    existsAdmin.otpExpire = Date.now() + 5 * 60 * 1000;
+    await existsAdmin.save();
+    res.status(200).json({
+      success: true,
+      message: "OTP has been sent successfully to email",
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+
+
+async function verifyOTP(req, res, next) {
+  try {
+    const { email, password, otp } = req.body;
+    console.log(email,password,otp);
+    if (!email || !otp || !password) return next(errHandler(400, "All fields are required"));
+    const admin = await Admin.findOne({ email: email });
+    if (!admin) return next(errHandler(404, "*Admin Not found..."));
     const isValidPassword = await bcryptjs.compare(
-      adminPassword,
-      admin.adminPassword
+      password,
+      admin.password
     );
-    if (!isValidPassword) next(errHandler(401, "unauthorized"));
+    if (!isValidPassword) return next(errHandler(401, "*Invalid Admin Password"));
+    if (Date.now() > admin.otpExpire) return next(errHandler(400, "OTP expired"));
+    if (otp != admin.otp) return next(errHandler(401, "Unauthorized"));
+
     const admin_access_token = jwt.sign(
       { id: admin._id, role: admin.role },
       process.env.JWT_SECRET_KEY
     );
+
+    admin.otp = undefined;
+    admin.otpExpire = undefined;
+
+    await admin.save();
+
     res.status(200).json({
       success: true,
-      admin: {
-        email: admin.adminMail,
-      },
+      statusCode: 200,
+      email: admin.email,
       token: admin_access_token,
     });
   } catch (err) {
@@ -60,22 +97,23 @@ async function adminSignIn(req, res, next) {
   }
 }
 
+
 async function updateAdminAccount(req, res, next) {
   try {
-    const {adminMail, adminPassword} = req.body;
-    const adminToUpdate = await Admin.findOne({adminMail});
+    const {email, password} = req.body;
+    const adminToUpdate = await Admin.findOne({email});
     if (!adminToUpdate) return next(errHandler(404, "Admin Not Found"));
-    const isValidPassword = await bcryptjs.compare(adminPassword, adminToUpdate.adminPassword);
+    const isValidPassword = await bcryptjs.compare(password, adminToUpdate.password);
     if(!isValidPassword) return next(errHandler(401, "password incorrect"));
-    if (req.body.newAdminPassword){
-      console.log(req.body.newAdminPassword);
-      req.body.newAdminPassword = await bcryptjs.hash(req.body.newAdminPassword, 10);
+    if (req.body.newPassword){
+      console.log(req.body.newPassword);
+      req.body.newPassword = await bcryptjs.hash(req.body.newPassword, 10);
     }
     const updatedAdmin = await Admin.findOneAndUpdate(
-      {adminMail: adminMail},
+      {email: email},
       {
-        adminName: req.body.adminName,
-        adminPassword: req.body.newAdminPassword,
+        name: req.body.name,
+        password: req.body.newPassword,
         phone: req.body.phone,
         role: req.body.role,
       },
@@ -87,7 +125,7 @@ async function updateAdminAccount(req, res, next) {
       success: true,
       message: "Admin Account has been updated successfully.",
       admin: {
-        email: rest.adminMail
+        email: rest.email
       }
     });
   } catch (err) {
@@ -97,16 +135,16 @@ async function updateAdminAccount(req, res, next) {
 
 async function deleteAdminAccount(req, res, next) {
   try {
-    const {adminMail, adminPassword} = req.body;
-    const adminToDelete = await Admin.findOne({ adminMail: adminMail });
+    const {email, password} = req.body;
+    const adminToDelete = await Admin.findOne({ email: email });
     if (!adminToDelete) return next(errHandler(404, "Admin Not Found"));
-    const isValidPassword = await bcryptjs.compare(adminPassword, adminToDelete.adminPassword);
+    const isValidPassword = await bcryptjs.compare(password, adminToDelete.password);
     if(!isValidPassword) return next(errHandler(401, "password incorrect"));
-    const deletedAdmin = await Admin.findOneAndDelete({adminMail: adminMail });
+    const deletedAdmin = await Admin.findOneAndDelete({email: email });
     res
       .status(200)
       .json({
-        message: `${deletedAdmin.adminName} account deleted successfully`,
+        message: `${deletedAdmin.name} account deleted successfully`,
       });
   } catch (err) {
     next(err);
@@ -115,6 +153,7 @@ async function deleteAdminAccount(req, res, next) {
 
 module.exports = {
   adminSignIn,
+  verifyOTP,
   adminSignUp,
   updateAdminAccount,
   deleteAdminAccount,

@@ -63,18 +63,18 @@ async function createStudent(req, res, next) {
 async function studentSignIn(req, res, next) {
   try {
     const { email } = req.body;
+    console.log(email)
     const existsStudent = await Student.findOne({
       email: email,
     });
     if (!existsStudent) return next(errHandler(401, "Student not found"));
-
     const OTP = generateOTP();
 
     sendOTPEmail(email, OTP);
     existsStudent.otp = OTP;
     existsStudent.otpExpire = Date.now() + 5 * 60 * 1000;
     await existsStudent.save();
-
+    console.log("welcome");
     res.status(200).json({
       success: true,
       message: "OTP has been sent successfully to email",
@@ -87,8 +87,9 @@ async function studentSignIn(req, res, next) {
 async function verifyOTP(req, res, next) {
   try {
     const { email, otp } = req.body;
+    console.log(otp)
     if (!email || !otp)
-      return next(errorHandler(400, "All fields are required"));
+      return next(errHandler(400, "All fields are required"));
     const student = await Student.findOne({ email });
     if (!student) return next(errHandler(404, "student not found"));
     if (Date.now() > student.otpExpire)

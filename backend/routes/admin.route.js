@@ -5,6 +5,7 @@ const {
   adminSignUp,
   updateAdminAccount,
   deleteAdminAccount,
+  verifyOTP
 } = require("../controllers/admin.controller");
 const authorizeRoles = require("../middlewares/authorizeRoles");
 const verifyToken = require("../middlewares/authMiddleware");
@@ -15,6 +16,7 @@ router
     adminSignUp
   )
   .post("/signin", adminSignIn)
+  .post("/verify-otp", verifyOTP)
   .patch(
     "/update",
     verifyToken,

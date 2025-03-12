@@ -11,10 +11,6 @@ const staffSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    password: {
-      type: String,
-      required: true,
-    },
     phone: {
       type: String,
       required: true,
@@ -33,6 +29,8 @@ const staffSchema = new mongoose.Schema(
       type: [String],
       required: true
     },
+    otp: { type: String },
+    otpExpire: { type: Number },
   },
   { timestamps: true }
 );

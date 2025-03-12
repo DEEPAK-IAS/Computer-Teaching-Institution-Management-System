@@ -1,19 +1,19 @@
 const mongoose = require("mongoose");
 
 const AdminSchema = new mongoose.Schema({
-  adminName : {
+  name : {
     type: String,
     required: true,
     trim: true
   }, 
-  adminMail : {
+  email : {
     type: String,
     unique: true,
     lowercase: true,
     trim: true,
     required: true
   },
-  adminPassword : {
+  password : {
     type: String,
     required: true,
   },
@@ -26,7 +26,9 @@ const AdminSchema = new mongoose.Schema({
   role: {
     type: String,
     required: true
-  }
+  },
+  otp: { type: String },
+  otpExpire: { type: Number },
 }, {
   timestamps: true
 });
