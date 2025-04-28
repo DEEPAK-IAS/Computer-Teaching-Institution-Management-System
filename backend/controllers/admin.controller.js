@@ -39,7 +39,6 @@ async function adminSignUp(req, res, next) {
 async function adminSignIn(req, res, next) {
   try {
     const { email } = req.body;
-    console.log(email);
     const existsAdmin = await Admin.findOne({
       email: email,
     });
@@ -64,7 +63,6 @@ async function adminSignIn(req, res, next) {
 async function verifyOTP(req, res, next) {
   try {
     const { email, password, otp } = req.body;
-    console.log(email,password,otp);
     if (!email || !otp || !password) return next(errHandler(400, "All fields are required"));
     const admin = await Admin.findOne({ email: email });
     if (!admin) return next(errHandler(404, "*Admin Not found..."));
@@ -89,6 +87,7 @@ async function verifyOTP(req, res, next) {
     res.status(200).json({
       success: true,
       statusCode: 200,
+      role: "admin",
       email: admin.email,
       token: admin_access_token,
     });

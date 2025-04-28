@@ -7,14 +7,12 @@ const sendOTPEmail = require("../config/nodemailer.config");
 
 async function staffSignUp(req, res, next) {
   try {
-    const { name, email, password, phone, role, courses, availableTime } = req.body;
+    const { name, email,  phone, role, courses, availableTime } = req.body;
     const isStaffExists = await Staff.findOne({ email });
     if (isStaffExists) return next(errHandler(403, "staff already exists"));
-    const hashedPassword = await bcryptjs.hash(password, 10);
     const newStaff = await new Staff({
       name: name,
       email: email,
-      password: hashedPassword,
       phone: phone,
       role: role,
       courses: courses,

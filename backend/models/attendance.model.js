@@ -11,9 +11,15 @@ const attendanceSchema = new mongoose.Schema({
       dailyAttendance: [
         {
           date: { type: Date },
-          status: { type: String, enum: ["Present", "Absent"] }
+          status: { type: String, enum: ["P", "A", "L"] }
         }
-      ]
+      ],
+      breakStatus : {
+        isBreak: {type: Boolean, default: false},
+        date: {type: String},
+        attendedClasses: {type: Number, default: 0},
+      }
+
     }
   ]
 }, {timestamps: true});

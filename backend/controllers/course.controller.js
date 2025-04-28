@@ -3,10 +3,11 @@ const errHandler = require("../utils/errHandler");
 
 async function createCourse(req, res, next) {
   try {
-    const { courseId, courseName, courseIncludes, duration } = req.body;
+    const { name, courseIncludes, duration } = req.body;
+    const courseExists = await Course.findOne({name});
+    if(courseExists) return next(errHandler(401, "course already exists"));
     const newCourse = await new Course({
-      courseId: courseId,
-      courseName: courseName,
+      name: name,
       duration: duration,
       courseIncludes: courseIncludes,
     }).save();
@@ -21,15 +22,14 @@ async function createCourse(req, res, next) {
 
 async function updateCourse(req, res, next) {
   try {
-    const {courseId} = req.body;
-    const courseToUpdate = await Course.findOne({courseId: courseId});
-    if (!courseToUpdate) return next(errHandler("404", "Course not found"));
-    await Course.findByIdAndUpdate(
-      { courseId: courseId },
+    const id = req.params.id;
+    const courseToUpdate = await Course.findOne({_id : id});
+    if (!courseToUpdate) return next(errHandler(404, "Course not found"));
+    await Course.findOneAndUpdate(
+      { _id: id},
       {
-        courseId: req.body.newCourseId,
         name: req.body.name,
-        currentCourse: req.body.currentCourse,
+        duration: req.body.duration,
         courseIncludes: req.body.courseIncludes,
       }
     );
@@ -44,9 +44,9 @@ async function updateCourse(req, res, next) {
 
 async function deleteCourse(req, res, next) {
   try {
-    const {courseId} = req.body;
-    const courseToDelete = await Course.findOne({ courseId: courseId });
-    if (!courseToDelete) return next(errHandler("404", "Course not found"));
+    const id = req.params.id;
+    const courseToDelete = await Course.findOne({ _id: id });
+    if (!courseToDelete) return next(errHandler(404, "Course not found"));
     await Course.findByIdAndDelete({ _id: req.params.id });
     res.status(200).json({
       success: true,
@@ -71,9 +71,9 @@ async function getAllCourses(req, res, next) {
 
 async function getSpecificCourse(req, res, next) {
   try {
-    const {courseId} = req.body;
-    const course = await Course.findOne({ courseId: courseId});
-    if (!course) return next(errHandler("404", "Course not found"));
+    const {id} = req.params;
+    const course = await Course.findOne({ _id: id});
+    if (!course) return next(errHandler(404, "Course not found"));
     res.status(200).json({
       success: true,
       course: course,
@@ -83,14 +83,12 @@ async function getSpecificCourse(req, res, next) {
   }
 }
 
-async function createCourseObject(courseName, applyingDate, time, staff,courseStatus) {
+async function createCourseObject(name, applyingDate, time, staff) {
   try {
-    const course = await Course.findOne({ courseName });
-
+    const course = await Course.findOne({ name : name});
     if (!course) throw new Error("Course not found");
-
     return {
-      applyingFor: courseName,
+      applyingFor: name,
       applyingDate: applyingDate,
       duration: course.duration,
       startingDate: new Date(),

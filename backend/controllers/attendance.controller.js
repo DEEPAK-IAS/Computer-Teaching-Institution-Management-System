@@ -2,134 +2,90 @@ const Attendance = require("../models/attendance.model");
 const Batch = require("../models/batch.model");
 const errHandler = require("../utils/errHandler");
 
-async function createAttendance(req, res, next) {
-  try {
-    const { batchId, year, month } = req.body;
-    const existingAttendance = await Attendance.findOne({
-      batchId,
-      year,
-      month
-    });
-    if (existingAttendance)
-      return next(errHandler(403, "Attendance already exists"));
-    const batch = await Batch.findOne({ batchId: batchId });
-    const formattedStudents = batch.students.map((student) => ({
-      studentId: student,
-      dailyAttendance: [],
-    }));
 
-    const newAttendance = await new Attendance({
-      batchId: batchId,
-      month: month,
-      year: year,
-      time: batch.batchTime,
-      staff: batch.staff,
-      students: formattedStudents,
-    }).save();
 
-    res.status(200).json({
-      success: true,
-      message: `${batchId}, ${month}, ${year} ${staff} attendance  was created successfully.`,
-    });
-  } catch (err) {
-    next(err);
-  }
-}
+const createInitialAttendanceForBatch = async (batch) => {
+
+  const { _id: batchId, staff, students, startingDate, batchTime } = batch;
+
+  const date = new Date(startingDate);
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const time = batchTime || "morning";
+  const formattedStudents = (students || []).map((student) => ({
+    studentId: student.toString(),
+    dailyAttendance: [],
+  }));
+
+  const newAttendance = new Attendance({
+    batchId,
+    year,
+    month,
+    time,
+    staff,
+    students: formattedStudents,
+  });
+
+  await newAttendance.save();
+};
+
+
 
 async function updateStudentAttendance(req, res, next) {
   try {
     const batchId = req.params.batchId;
-    const { year, month, time, students, staff } = req.body;
-    const existingAttendance = await Attendance.findOne({ batchId: batchId });
-    if (!existingAttendance)
-      return next(errHandler(404, "Attendance not found"));
+    const { students } = req.body;
+
+    const attendanceDoc = await Attendance.findOne({ batchId });
+
+    if (!attendanceDoc) {
+      return res.status(404).json({
+        success: false,
+        message: "Attendance record not found.",
+      });
+    }
+
+    const formatDate = (d) => new Date(d).toISOString().split('T')[0];
+
     for (const student of students) {
       const { studentId, dailyAttendance } = student;
-      const { date, status } = dailyAttendance;
+      if (!Array.isArray(dailyAttendance) || dailyAttendance.length === 0) continue;
 
-      const attendanceDate = new Date(date);
-      const result = await Attendance.findOneAndUpdate(
-        {
-          batchId,
-          year,
-          month,
-          time,
-          staff,
-          "students.studentId": studentId,
-          "students.dailyAttendance.date": { $ne: attendanceDate },
-        },
-        {
-          $push: {
-            "students.$.dailyAttendance": { date: attendanceDate, status },
-          },
-        },
-        { new: true }
+      const { date, status } = dailyAttendance[0];
+
+      const attendanceDate = new Date(date + 'Z');
+
+      const studentRecord = attendanceDoc.students.find(
+        (s) => s.studentId.toString() === studentId
       );
-      if (!result) {
-        await Attendance.updateOne(
-          {
-            batchId,
-            year,
-            month,
-            time,
-            staff,
-            "students.studentId": studentId,
-            "students.dailyAttendance.date": attendanceDate,
-          },
-          {
-            $set: {
-              "students.$.dailyAttendance.$[attendance].status": status,
-            },
-          },
-          {
-            arrayFilters: [{ "attendance.date": attendanceDate }],
-          }
+
+      if (studentRecord) {
+        const attendanceEntry = studentRecord.dailyAttendance.find(
+          (entry) => formatDate(entry.date) === formatDate(attendanceDate)
         );
-      } else {
+
+        if (attendanceEntry) {
+          attendanceEntry.status = status;
+        } else {
+          studentRecord.dailyAttendance.push({
+            date: attendanceDate,
+            status,
+          });
+        }
       }
     }
+
+    await attendanceDoc.save();
+
     res.status(200).json({
       success: true,
-      message: `students will be attendance updated successfully..`,
+      message: "Attendance updated successfully.",
     });
   } catch (err) {
     next(err);
   }
 }
 
-async function updateAttendance(req, res, next) {
-  try {
-    const { batchId, year, month, time, staff } = req.body;
-    const existingAttendance = await Attendance.findOne({
-      batchId: batchId,
-      year: year,
-      month: month,
-      time: time,
-      staff: staff,
-    });
-    if (!existingAttendance)
-      return next(errHandler(404, "attendance not found"));
-
-    const updatedAttendance = await Attendance.findOneAndUpdate(
-      {
-        batchId: batchId,
-        year: year,
-        month: month,
-        time: time,
-        staff: staff,
-      },
-      {
-        year: year,
-        month: month,
-        time: time,
-        staff: staff
-      },
-      { new: true }
-    );
-  } catch (err) {
-    next(err);
-  }
-}
 
 async function deleteAttendance(req, res, next) {
   try {
@@ -138,9 +94,39 @@ async function deleteAttendance(req, res, next) {
   }
 }
 
+
+async function getAttendanceDetails(req, res, next) {
+  try {
+
+    const {batchId} = req.params;
+
+    const attendance = await Attendance.findOne({ batchId: batchId });  
+    if (!attendance) {
+      return res.status(404).json({ success: false, message: "Attendance record not found." });
+    }
+    const { students } = attendance;
+    const formattedStudents = students.map((student) => ({
+      studentId: student.studentId,
+      dailyAttendance: student.dailyAttendance.map((entry) => ({
+        date: entry.date,
+        status: entry.status,
+      })),
+    }));
+
+    res.status(200).json({
+      success: true,
+      students: formattedStudents,
+    });
+
+  } catch(err) {
+    next(err);
+  }
+}
+
+
 module.exports = {
-  createAttendance,
-  updateAttendance,
   deleteAttendance,
   updateStudentAttendance,
+  createInitialAttendanceForBatch,
+  getAttendanceDetails
 };

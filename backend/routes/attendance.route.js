@@ -2,15 +2,15 @@ const express = require("express");
 const router = express.Router();
 
 const {
-  createAttendance,
   updateAttendance,
   updateStudentAttendance,
   deleteAttendance,
+  getAttendanceDetails,
 } = require("../controllers/attendance.controller");
 
 
-router.post("/create", createAttendance)
-      .patch("/update/:batchId", updateStudentAttendance)
+router.patch("/update/:batchId", updateStudentAttendance)
+      .get("/:batchId", getAttendanceDetails)
 
 
 

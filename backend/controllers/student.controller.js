@@ -9,7 +9,7 @@ const sendOTPEmail = require("../config/nodemailer.config");
 
 async function createStudent(req, res, next) {
   try {
-    const {
+    let {
       studentId,
       name,
       gender,
@@ -47,10 +47,9 @@ async function createStudent(req, res, next) {
       address,
       totalAmount,
       installments,
-      installmentAmounts,
+      installmentAmounts: installmentAmounts,
       courses: course,
     }).save();
-
     res.status(201).json({
       success: true,
       message: `${newStudent.name} created successfully`,
@@ -87,7 +86,6 @@ async function studentSignIn(req, res, next) {
 async function verifyOTP(req, res, next) {
   try {
     const { email, otp } = req.body;
-    console.log(otp)
     if (!email || !otp)
       return next(errHandler(400, "All fields are required"));
     const student = await Student.findOne({ email });
@@ -320,7 +318,7 @@ async function getAllStudents(req, res, next) {
 
 async function getSpecificStudent(req, res, next) {
   try {
-    const student = await Student.findOne({ studentId: req.params.studentId });
+    const student = await Student.findOne({ _id: req.params.studentId });
     if (!student) return next(errHandler(404, "student not found"));
     res.status(200).json({
       success: true,
@@ -330,6 +328,31 @@ async function getSpecificStudent(req, res, next) {
     next(err);
   }
 }
+
+
+async function getStudentsDetails(req, res, next) {
+  try {
+
+    const {studentIds} = req.body;
+    const students = await Student.find({ _id: { $in: studentIds } });
+    res.status(200).json({
+      success: true,
+      students: students
+    })
+
+  } catch(err) {
+    next(err);
+  }
+}
+
+
+
+
+
+
+
+
+
 
 module.exports = {
   createStudent,
@@ -341,5 +364,6 @@ module.exports = {
   deleteCourse,
   updateCourse,
   getAllStudents,
-  getSpecificStudent
+  getSpecificStudent,
+  getStudentsDetails
 };
